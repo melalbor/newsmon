@@ -1,0 +1,19 @@
+# Test dependencies
+# Install with: pip install -r requirements-test.txt
+
+# Main project dependencies
+requests
+feedparser
+python-telegram-bot>=20.4
+pyyaml
+
+# Testing tools
+pytest>=7.0
+pytest-cov>=4.0
+pytest-mock>=3.10
+coverage>=7.0
+unittest-mock>=1.5
+
+# Optional: For better test output
+pytest-html>=3.1
+colorama>=0.4

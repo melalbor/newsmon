@@ -1,0 +1,4 @@
+requests
+feedparser
+python-telegram-bot>=20.4
+pyyaml
