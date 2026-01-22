@@ -127,7 +127,7 @@ Run the bot locally to test configuration:
 
 ```bash
 # Make sure environment variables are set
-python src/main.py
+python -m src.main
 ```
 
 ### Running Tests
@@ -241,7 +241,7 @@ RUN pip install -r requirements.txt
 COPY src/ ./src/
 COPY feeds.yaml .
 
-CMD ["python", "src/main.py"]
+CMD ["python", "-m", "src.main"]
 ```
 
 Build and run:
@@ -261,7 +261,7 @@ docker run -e TELEGRAM_BOT_TOKEN="..." \
 crontab -e
 
 # Add this line to run daily at 5 PM:
-0 17 * * * cd /path/to/newsmon && source .venv/bin/activate && python src/main.py
+0 17 * * * cd /path/to/newsmon && source .venv/bin/activate && python -m src.main
 ```
 
 ## Testing
@@ -429,7 +429,7 @@ python3 -m venv .venv && source .venv/bin/activate && pip install -r requirement
 pytest tests/ -v
 
 # Run
-export TELEGRAM_BOT_TOKEN="..." && export TELEGRAM_CHANNEL_ID="..." && python src/main.py
+export TELEGRAM_BOT_TOKEN="..." && export TELEGRAM_CHANNEL_ID="..." && python -m src.main
 
 # Deploy
 # Push to GitHub with secrets configured

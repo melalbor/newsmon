@@ -35,7 +35,7 @@ jobs:
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
           TELEGRAM_ADMIN_CHANNEL_ID: ${{ secrets.TELEGRAM_ADMIN_CHANNEL_ID }}
         run: |
-          python src/main.py
+          python -m src.main
 
       - name: Log execution result
         if: always()
