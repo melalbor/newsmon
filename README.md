@@ -8,7 +8,7 @@ An automated RSS feed aggregator that fetches news from multiple sources and sen
 - **Intelligent Deduplication**: Fingerprint-based duplicate detection across feeds
 - **Automated Scheduling**: GitHub Actions integration for daily execution
 - **Rate Limiting**: Exponential backoff with automatic retry on API rate limits
-- **Error Recovery**: Graceful error handling with continue-on-error
+- **Error Handling**: Graceful error handling with proper failure reporting
 - **No State Persistence**: Ephemeral in-memory operation - perfect for serverless
 - **Comprehensive Testing**: 132 tests with 5.28x test/code ratio
 - **Security First**: Environment variables for all sensitive data, no hardcoded secrets
@@ -196,7 +196,7 @@ feeds.yaml
 - Orchestrates the full workflow
 - Loads feeds from YAML configuration
 - Coordinates all modules
-- Error recovery with continue-on-error
+- Comprehensive error handling and reporting
 
 ## Deployment
 

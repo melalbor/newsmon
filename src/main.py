@@ -3,10 +3,10 @@
 import os
 import yaml
 import time
-from .fetch import fetch_all, FeedFetchError
-from .parse import normalize_feed
-from .dedupe import select_new_items, filter_recent_items
-from .telegram_msg import send_items, send_admin
+from src.fetch import fetch_all, FeedFetchError
+from src.parse import normalize_feed
+from src.dedupe import select_new_items, filter_recent_items
+from src.telegram_msg import send_items, send_admin
 
 FEEDS_FILE_DEFAULT = "feeds.yaml"
 

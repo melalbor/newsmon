@@ -36,7 +36,6 @@ jobs:
           TELEGRAM_ADMIN_CHANNEL_ID: ${{ secrets.TELEGRAM_ADMIN_CHANNEL_ID }}
         run: |
           python src/main.py
-        continue-on-error: true
 
       - name: Log execution result
         if: always()
