@@ -77,14 +77,20 @@ def main():
         print(f"  (Dropped {len(all_items) - len(recent_items)} old items)")
 
     if not recent_items:
-        print("No recent items to process.")
+        error_msg = "No recent items to process."
+        print(error_msg)
+        if has_telegram:
+            send_admin(bot_token, admin_channel_id, error_msg)
         return
 
     # Step 2: Dedupe and enforce cap
     new_items = select_new_items(recent_items, state, max_items=MAX_ITEMS_PER_RUN)
 
     if not new_items:
-        print("No new items to send.")
+        error_msg = "No new items to send."
+        print(error_msg)
+        if has_telegram:
+            send_admin(bot_token, admin_channel_id, error_msg)
         return
 
     print(f"New items after dedup: {len(new_items)}")
