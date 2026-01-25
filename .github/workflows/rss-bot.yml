@@ -2,7 +2,7 @@ name: RSS Telegram Bot
 
 on:
   schedule:
-    - cron: "0 17 * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 concurrency:
