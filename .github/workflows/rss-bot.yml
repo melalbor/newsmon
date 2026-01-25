@@ -1,6 +1,10 @@
 name: RSS Telegram Bot
 
 on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/**"
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
