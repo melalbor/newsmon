@@ -1,5 +1,7 @@
 # newsmon - RSS to Telegram Bot
 
+[![RSS Telegram Bot](https://github.com/melalbor/newsmon/actions/workflows/rss-bot.yml/badge.svg)](https://github.com/melalbor/newsmon/actions/workflows/rss-bot.yml)
+
 An automated RSS feed aggregator that fetches news from multiple sources and sends them to a Telegram channel. Designed for scheduled execution (e.g., daily cron jobs) with built-in deduplication, rate limiting, and error recovery.
 
 ## Features
