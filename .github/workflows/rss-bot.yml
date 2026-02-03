@@ -34,6 +34,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
           TELEGRAM_ADMIN_CHANNEL_ID: ${{ secrets.TELEGRAM_ADMIN_CHANNEL_ID }}
+          STATE_GIST_ID: ${{ secrets.STATE_GIST_ID }}
+          GH_GIST_UPDATE_TOKEN: ${{ secrets.GH_GIST_UPDATE_TOKEN }}
         run: |
           python -m src.main
 
