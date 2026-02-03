@@ -70,7 +70,8 @@ def send_items(bot_token: str, chat_id: str, items: list, pause_sec: float = 0.3
     Pause between messages and use backoff retry for rate limiting.
     """
     for item in items:
-        text = f"📰 {item['title']}\n{item['feed_title']}\n{item['link']}"
+        ts = str(item.get('published')).split()[0] if item.get('published') else ''
+        text = f"📰 {item['feed_title']} / {item['title']}\n{ts}\n\n{item['link']}"
         try:
             send_message_with_backoff(bot_token, chat_id, text)
         except Exception as e:

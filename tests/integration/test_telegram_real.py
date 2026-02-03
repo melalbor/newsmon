@@ -46,7 +46,7 @@ class TestTelegramRealIntegration:
         bot_token = telegram_credentials["bot_token"]
         test_channel_id = telegram_credentials["test_channel_id"]
         
-        sample_message = "📰 Test Article - Telegram Integration\nhttps://github.com/melalbor/newsmon"
+        sample_message = "📰 Test Article - Telegram Integration\nhttps://example.com/helloworld"
         
         # Should not raise exception
         send_message(bot_token, test_channel_id, sample_message)
