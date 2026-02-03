@@ -1,6 +1,8 @@
 # src/dedupe.py
 
 import hashlib
+import requests
+import json
 from typing import Dict, List, Any
 from datetime import datetime, timezone, timedelta
 
@@ -26,35 +28,17 @@ def filter_recent_items(
     """
     return [item for item in items if is_recent(item, max_age_days)]
 
-def fingerprint(item: Dict[str, Any]) -> str:
-    """
-    Generate a stable fingerprint for an item.
-    Priority:
-    1. item['id']
-    2. item['link']
-    3. title + link
-    """
-    raw = (
-        item.get("id")
-        or item.get("link")
-        or f"{item.get('title')}|{item.get('link')}"
-    )
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
-
 def select_new_items(
     items: List[Dict[str, Any]],
-    state: Dict[str, Any],
+    past_items: Dict[str, List[str]],
     max_items: int = 10,
 ) -> List[Dict[str, Any]]:
     """
     Returns a list of new items to send (capped).
-    Since state is ephemeral (in-memory only), this function primarily
-    applies per-run deduplication within the same fetch cycle.
+    Items are considered new if their title is not in past_items for their feed.
     """
 
-    feeds_state = state.setdefault("feeds", {})
     selected = []
-    seen_fingerprints = set()  # Track within this run
 
     # Group items by feed
     items_by_feed: Dict[str, List[Dict[str, Any]]] = {}
@@ -62,10 +46,6 @@ def select_new_items(
         items_by_feed.setdefault(item["feed_url"], []).append(item)
 
     for feed_url, feed_items in items_by_feed.items():
-        feed_state = feeds_state.setdefault(
-            feed_url,
-            {"seen": []},
-        )
 
         # Sort oldest → newest
         feed_items.sort(
@@ -76,16 +56,58 @@ def select_new_items(
             if len(selected) >= max_items:
                 break
 
-            fp = fingerprint(item)
-            if fp in seen_fingerprints:
+            if item.get("title") in past_items.get(feed_url, []):
                 continue
 
             # Mark as selected for this run
-            item["_fingerprint"] = fp
             selected.append(item)
-            seen_fingerprints.add(fp)
 
         if len(selected) >= max_items:
             break
 
     return selected
+
+def get_past_items(gist_id: str, gh_token: str) -> tuple[str, Dict[str, List[str]]]:
+    """
+    Returns past item titles from state gist.
+    """
+    headers = {
+        "Authorization": f"token {gh_token}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    url = f"https://api.github.com/gists/{gist_id}"
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+
+    gist = resp.json()
+
+    filename = next(iter(gist["files"]))
+    content = gist["files"][filename]["content"]
+    data = json.loads(content)
+    return filename, data
+
+def update_state_gist(gist_id: str, gh_token: str, filename: str, updated_data: Dict[str, List[str]]):
+    """"
+    Update state gist with new data.
+    """
+    headers = {
+        "Authorization": f"token {gh_token}",
+        "Accept": "application/vnd.github+json"
+    }
+    url = f"https://api.github.com/gists/{gist_id}"
+    if not updated_data:
+        return  # Nothing to update
+    
+    payload = {
+        "files": {
+            filename: {
+                "content": json.dumps(updated_data, indent=2)
+            }
+        }
+    }
+    try:
+        response = requests.patch(url, headers=headers, json=payload)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        raise RuntimeError(f"Failed to update gist: {e}")

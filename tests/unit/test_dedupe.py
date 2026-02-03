@@ -2,74 +2,7 @@
 
 import pytest
 from datetime import datetime, timezone, timedelta
-from src.dedupe import fingerprint, select_new_items, is_recent, filter_recent_items
-
-
-class TestFingerprint:
-    """Test fingerprint function"""
-
-    def test_fingerprint_with_id(self):
-        """Test fingerprint using item id"""
-        item = {
-            "id": "article-123",
-            "link": "https://example.com/article",
-            "title": "Test Article"
-        }
-        
-        fp = fingerprint(item)
-        
-        assert isinstance(fp, str)
-        assert len(fp) == 64  # SHA256 hex digest length
-
-    def test_fingerprint_consistency(self):
-        """Test that same item produces same fingerprint"""
-        item = {
-            "id": "article-123",
-            "link": "https://example.com/article",
-            "title": "Test Article"
-        }
-        
-        fp1 = fingerprint(item)
-        fp2 = fingerprint(item)
-        
-        assert fp1 == fp2
-
-    def test_fingerprint_with_link_fallback(self):
-        """Test fingerprint falls back to link when id is None"""
-        item = {
-            "id": None,
-            "link": "https://example.com/article",
-            "title": "Test Article"
-        }
-        
-        fp = fingerprint(item)
-        
-        assert isinstance(fp, str)
-        assert len(fp) == 64
-
-    def test_fingerprint_with_title_link_fallback(self):
-        """Test fingerprint falls back to title+link when both id and link missing"""
-        item = {
-            "id": None,
-            "link": None,
-            "title": "Test Article"
-        }
-        
-        fp = fingerprint(item)
-        
-        assert isinstance(fp, str)
-        assert len(fp) == 64
-
-    def test_fingerprint_different_for_different_items(self):
-        """Test that different items produce different fingerprints"""
-        item1 = {"id": "123", "link": None, "title": None}
-        item2 = {"id": "456", "link": None, "title": None}
-        
-        fp1 = fingerprint(item1)
-        fp2 = fingerprint(item2)
-        
-        assert fp1 != fp2
-
+from src.dedupe import select_new_items, is_recent, filter_recent_items
 
 class TestSelectNewItems:
     """Test select_new_items function"""
@@ -78,7 +11,6 @@ class TestSelectNewItems:
     def setup(self):
         """Set up test fixtures"""
         self.feed_url = "https://example.com/feed"
-        self.state = {"version": 1, "feeds": {}}
 
     def _create_item(self, title="Article", feed_url=None, item_id="id1", 
                     published=None):
@@ -94,10 +26,10 @@ class TestSelectNewItems:
         }
 
     def test_select_new_items_basic(self):
-        """Test selecting new items from state"""
+        """Test selecting new items"""
         items = [self._create_item(item_id=str(i)) for i in range(3)]
         
-        result = select_new_items(items, self.state, max_items=10)
+        result = select_new_items(items, {}, max_items=10)
         
         assert len(result) == 3
 
@@ -105,76 +37,9 @@ class TestSelectNewItems:
         """Test that max_items limit is respected"""
         items = [self._create_item(item_id=str(i)) for i in range(20)]
         
-        result = select_new_items(items, self.state, max_items=5)
+        result = select_new_items(items, {}, max_items=5)
         
         assert len(result) == 5
-
-    def test_select_new_items_deduplicates_within_run(self):
-        """Test that duplicate items within same run are deduped"""
-        # Create items with same fingerprint (same ID)
-        items = [
-            self._create_item(item_id="same-id", title="Item 1"),
-            self._create_item(item_id="same-id", title="Item 1 duplicate"),
-        ]
-        
-        # First pass - both have same fingerprint
-        result1 = select_new_items(items, self.state, max_items=10)
-        # Only one should be selected (in-run dedup)
-        assert len(result1) == 1
-        
-        # Fresh state (ephemeral) - items would be selected again if same items provided
-        fresh_state = {"version": 1, "feeds": {}}
-        result2 = select_new_items(items, fresh_state, max_items=10)
-        # With fresh state, same items selected again (no cross-run memory)
-        assert len(result2) == 1
-
-    def test_select_new_items_fingerprint_added(self):
-        """Test that _fingerprint is added to selected items"""
-        items = [self._create_item()]
-        
-        result = select_new_items(items, self.state, max_items=10)
-        
-        assert "_fingerprint" in result[0]
-        assert len(result[0]["_fingerprint"]) == 64
-
-    def test_select_new_items_initializes_feed_state(self):
-        """Test that feed state is initialized"""
-        items = [self._create_item()]
-        initial_state = {"version": 1, "feeds": {}}
-        
-        select_new_items(items, initial_state, max_items=10)
-        
-        assert self.feed_url in initial_state["feeds"]
-        assert "seen" in initial_state["feeds"][self.feed_url]
-
-    def test_select_new_items_multiple_feeds(self):
-        """Test selecting items from multiple feeds"""
-        items = [
-            self._create_item(feed_url="feed1", item_id="1"),
-            self._create_item(feed_url="feed2", item_id="2"),
-            self._create_item(feed_url="feed1", item_id="3"),
-        ]
-        
-        result = select_new_items(items, self.state, max_items=10)
-        
-        assert len(result) == 3
-        assert len(self.state["feeds"]) == 2
-
-    def test_select_new_items_mixed_new_and_old(self):
-        """Test selecting from mix of items (in-run dedup only)"""
-        items = [self._create_item(item_id=str(i)) for i in range(5)]
-        
-        # Since state is ephemeral, persisted "seen" list doesn't affect selection
-        # All fresh items will be selected on fresh state
-        self.state["feeds"][self.feed_url] = {
-            "seen": []  # Empty in-memory state
-        }
-        
-        result = select_new_items(items, self.state, max_items=10)
-        
-        # All items should be selected (no persistent state to compare against)
-        assert len(result) == 5
-
 
 class TestIsRecent:
     """Test is_recent function for age filtering"""

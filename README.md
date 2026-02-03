@@ -91,7 +91,7 @@ export TELEGRAM_ADMIN_CHANNEL_ID="..."
 python -m pytest tests/ -v
 ```
 
-Expected output: `132 passed in ~1.72s`
+Expected output: `111 passed in ~3.72s`
 
 ## Configuration
 
@@ -120,6 +120,8 @@ feeds:
 | `TELEGRAM_BOT_TOKEN` | Yes | Bot token from @BotFather |
 | `TELEGRAM_CHANNEL_ID` | Yes | Channel ID to post updates |
 | `TELEGRAM_ADMIN_CHANNEL_ID` | Yes | Admin channel for notifications |
+| `STATE_GIST_ID`  | Yes | GitHub Gist ID where state file is stored, containing published news titles |
+| `GH_GIST_UPDATE_TOKEN` | Yes | GitHub token to update State Gist file |  
 
 ## Usage
 
@@ -183,9 +185,9 @@ feeds.yaml
 - UTC timezone normalization
 
 #### dedupe.py
-- Creates fingerprints using: ID → Link → Title+Link hierarchy
-- Maintains in-memory state of seen items
-- Filters items by recency (default: 7 days)
+- Recover previous items from State Gist file
+- Filter out items that have already been published during previous runs
+- Filters items by recency (default: 30 days)
 - Respects max_items limit per feed
 
 #### telegram_msg.py
@@ -218,6 +220,8 @@ The project includes a GitHub Actions workflow that automatically runs daily:
      - `TELEGRAM_BOT_TOKEN`
      - `TELEGRAM_CHANNEL_ID`
      - `TELEGRAM_ADMIN_CHANNEL_ID`
+     - `STATE_GIST_ID`
+     - `GH_GIST_UPDATE_TOKEN` 
 
 3. **Enable Actions** - Ensure GitHub Actions is enabled
 
@@ -253,6 +257,8 @@ docker build -t newsmon .
 docker run -e TELEGRAM_BOT_TOKEN="..." \
            -e TELEGRAM_CHANNEL_ID="..." \
            -e TELEGRAM_ADMIN_CHANNEL_ID="..." \
+           -e STATE_GIST_ID="..." \
+           -e GH_GIST_UPDATE_TOKEN="..." \
            newsmon
 ```
 
@@ -270,27 +276,25 @@ crontab -e
 
 ### Test Coverage
 
-- **Unit Tests (119)**: Individual module functionality
-  - Feed fetching (13 tests)
-  - Feed parsing (13 tests)
-  - Deduplication (21 tests)
-  - Telegram messaging (20 tests)
-  - Main orchestration (19 tests)
-  - Rate limiting (11 tests)
-  - Configuration validation (22 tests)
+- **Unit Tests**: Individual module functionality
+  - Feed fetching
+  - Feed parsing
+  - Deduplication
+  - Telegram messaging
+  - Main orchestration
+  - Rate limiting
+  - Configuration validation
 
-- **Integration Tests (13)**: End-to-end workflows
+- **Integration Tests**: End-to-end workflows
   - Complete workflow from feed to Telegram
-  - Duplicate detection across multiple feeds
   - Max items respected
-  - Ephemeral state validation
   - Real Telegram message formatting
 
 ### Running Specific Tests
 
 ```bash
 # Run specific test class
-pytest tests/unit/test_dedupe.py::TestFingerprint -v
+pytest tests/unit/test_dedupe.py::TestEndToEndFlow -v
 
 # Run specific test
 pytest tests/unit/test_main.py::TestMain::test_main_success_flow -v
@@ -348,9 +352,9 @@ pytest tests/ -v --tb=long
 
 ### Duplicate messages
 
-1. Each run is independent (ephemeral state)
-2. Duplicates within same run are filtered
-3. Different runs may send same item if published recently
+1. Each run is independent but uses a State file on GitHub Gist
+2. Items that have been previously published are filtered (according to State Gist file)
+3. Items that are older than 30 days are filtered by default
 4. Adjust MAX_ITEM_AGE in `src/dedupe.py` if needed
 
 ### Rate limiting issues
@@ -431,12 +435,8 @@ python3 -m venv .venv && source .venv/bin/activate && pip install -r requirement
 pytest tests/ -v
 
 # Run
-export TELEGRAM_BOT_TOKEN="..." && export TELEGRAM_CHANNEL_ID="..." && python -m src.main
+export TELEGRAM_BOT_TOKEN="..." && export TELEGRAM_CHANNEL_ID="..." && TELEGRAM_ADMIN_CHANNEL_ID="..." && STATE_GIST_ID="..." && GH_GIST_UPDATE_TOKEN="..." && python -m src.main
 
 # Deploy
 # Push to GitHub with secrets configured
 ```
-
----
-
-**Status**: ✅ Production Ready | **Tests**: 132/132 Passing | **Coverage**: 5.28x Code Ratio

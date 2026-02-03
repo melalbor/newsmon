@@ -4,7 +4,7 @@ import pytest
 import tempfile
 import os
 from unittest.mock import Mock, patch
-from src.main import load_feeds, create_empty_state, main, FEEDS_FILE_DEFAULT
+from src.main import load_feeds, main, FEEDS_FILE_DEFAULT
 
 
 class TestLoadFeeds:

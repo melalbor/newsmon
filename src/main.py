@@ -5,15 +5,14 @@ import yaml
 import time
 from src.fetch import fetch_all, FeedFetchError
 from src.parse import normalize_feed
-from src.dedupe import select_new_items, filter_recent_items
+from src.dedupe import select_new_items, filter_recent_items, get_past_items, update_state_gist
 from src.telegram_msg import send_items, send_admin
 
 FEEDS_FILE_DEFAULT = "feeds.yaml"
 
-MAX_ITEMS_PER_RUN = 10
+MAX_ITEMS_PER_RUN = 10 # avoid flooding TG
 PAUSE_BETWEEN_MESSAGES = 0.3  # seconds
-# Allow override via TEST_MODE_RELAXED_AGE env var for testing purposes
-MAX_ITEM_AGE_DAYS = int(os.environ.get("TEST_MODE_RELAXED_AGE", "1"))  # Default 24h, can be 3+ for testing
+MAX_ITEM_AGE_DAYS = 30  # days. If older than 30 days, skip bc probably too old.
 
 
 def load_feeds(feeds_file=FEEDS_FILE_DEFAULT):
@@ -24,16 +23,13 @@ def load_feeds(feeds_file=FEEDS_FILE_DEFAULT):
         raise ValueError("feeds.yaml must be a list of feed URLs")
     return feeds_config
 
-
-def create_empty_state():
-    """Create an empty in-memory state object for deduplication."""
-    return {"version": 1, "feeds": {}}
-
-
 def main():
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
     channel_id = os.environ.get("TELEGRAM_CHANNEL_ID")
     admin_channel_id = os.environ.get("TELEGRAM_ADMIN_CHANNEL_ID")
+    state_gist_id = os.environ.get("STATE_GIST_ID")
+    gh_gist_token = os.environ.get("GH_GIST_UPDATE_TOKEN")
+
 
     # Allow running without Telegram by making it optional
     has_telegram = bool(bot_token and channel_id and admin_channel_id)
@@ -41,7 +37,6 @@ def main():
         print("⚠️  Telegram not configured (missing env vars). Running in dry-run mode.")
 
     feeds = load_feeds()
-    state = create_empty_state()  # Fresh in-memory state for this run
     all_items = []
 
     # Step 1: Fetch and parse feeds
@@ -84,7 +79,9 @@ def main():
         return
 
     # Step 2: Dedupe and enforce cap
-    new_items = select_new_items(recent_items, state, max_items=MAX_ITEMS_PER_RUN)
+    gist_filename, past_items = get_past_items(state_gist_id, gh_gist_token)
+    known_items = dict(past_items) # this will be incremented w/ new items later on.
+    new_items = select_new_items(recent_items, past_items, max_items=MAX_ITEMS_PER_RUN)
 
     if not new_items:
         error_msg = "No new items to send."
@@ -106,6 +103,10 @@ def main():
     if has_telegram:
         try:
             send_items(bot_token, channel_id, new_items, pause_sec=PAUSE_BETWEEN_MESSAGES)
+            for item in new_items:
+                if item['title'] not in known_items.get(item['feed_url'], []):
+                    known_items.setdefault(item['feed_url'], []).append(item['title'])
+            update_state_gist(state_gist_id, gh_gist_token, gist_filename, known_items)
             print(f"✓ Sent {len(new_items)} items to Telegram")
         except Exception as e:
             error_msg = f"Telegram send failure: {e}"
@@ -116,8 +117,6 @@ def main():
     else:
         print(f"[DRY RUN] Would send {len(new_items)} items to Telegram")
 
-    # Note: State is not persisted (in-memory only for this run)
-    # This ensures fresh deduplication on each run and avoids state file management
     status = "Successfully sent" if has_telegram else "Successfully processed (dry-run)"
     print(f"{status} {len(new_items)} items.")
 

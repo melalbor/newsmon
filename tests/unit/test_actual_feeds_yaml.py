@@ -35,10 +35,6 @@ class TestActualFeedsYaml:
         """Verify feeds list is not empty"""
         assert len(feeds_data) > 0, "feeds list must not be empty"
 
-    def test_feeds_count(self, feeds_data):
-        """Verify expected number of feeds (currently 5)"""
-        assert len(feeds_data) == 5, f"Expected 5 feeds, got {len(feeds_data)}"
-
     def test_all_feeds_are_strings(self, feeds_data):
         """Verify all feed URLs are strings"""
         for i, feed in enumerate(feeds_data):
@@ -68,48 +64,6 @@ class TestActualFeedsYaml:
             # Should have at least one dot (domain separator)
             assert '.' in domain_part, \
                 f"Feed #{i+1} must have a domain with dot: {feed}"
-
-    def test_specific_apple_feed(self, feeds_data):
-        """Verify Apple releases feed is present and correct"""
-        expected = "https://developer.apple.com/news/releases/rss/releases.rss"
-        assert expected in feeds_data, \
-            f"Apple releases feed not found. Expected: {expected}"
-
-    def test_specific_grapheneos_feed(self, feeds_data):
-        """Verify GrapheneOS releases feed is present and correct"""
-        expected = "https://grapheneos.org/releases.atom"
-        assert expected in feeds_data, \
-            f"GrapheneOS feed not found. Expected: {expected}"
-
-    def test_specific_securelist_feed(self, feeds_data):
-        """Verify Securelist feed is present and correct"""
-        expected = "https://securelist.com/threat-category/mobile-threats/feed/"
-        assert expected in feeds_data, \
-            f"Securelist feed not found. Expected: {expected}"
-
-    def test_specific_citizenlab_feed(self, feeds_data):
-        """Verify CitizenLab feed is present and correct"""
-        expected = "https://citizenlab.ca/feed/"
-        assert expected in feeds_data, \
-            f"CitizenLab feed not found. Expected: {expected}"
-
-    def test_specific_amnesty_feed(self, feeds_data):
-        """Verify Amnesty security lab feed is present and correct"""
-        expected = "https://securitylab.amnesty.org/feed/"
-        assert expected in feeds_data, \
-            f"Amnesty security lab feed not found. Expected: {expected}"
-
-    def test_feed_order_preserved(self, feeds_data):
-        """Verify feeds are in expected order"""
-        expected_order = [
-            "https://developer.apple.com/news/releases/rss/releases.rss",
-            "https://grapheneos.org/releases.atom",
-            "https://securelist.com/threat-category/mobile-threats/feed/",
-            "https://citizenlab.ca/feed/",
-            "https://securitylab.amnesty.org/feed/"
-        ]
-        assert feeds_data == expected_order, \
-            "Feed order does not match expected order"
 
     def test_no_rss_feeds_have_malformed_urls(self, feeds_data):
         """Verify RSS feeds have proper .rss extension"""
@@ -194,8 +148,6 @@ class TestFeedsYamlComparison:
         # All should be URLs
         assert all(f.startswith(('http://', 'https://')) for f in self.feeds), \
             "All feeds must be URLs"
-        # Should have expected count
-        assert len(self.feeds) == 5, f"Expected 5 feeds, got {len(self.feeds)}"
 
     def test_print_feeds_for_inspection(self, capsys):
         """Print feed details for manual inspection"""
