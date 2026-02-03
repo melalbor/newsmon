@@ -35,6 +35,13 @@ def main():
     has_telegram = bool(bot_token and channel_id and admin_channel_id)
     if not has_telegram:
         print("⚠️  Telegram not configured (missing env vars). Running in dry-run mode.")
+    
+    if not state_gist_id or not gh_gist_token:
+        error_msg = "STATE_GIST_ID and GH_GIST_UPDATE_TOKEN must be set."
+        print(f"✗ {error_msg}")
+        if has_telegram:
+            send_admin(bot_token, admin_channel_id, error_msg)
+        return
 
     feeds = load_feeds()
     all_items = []
