@@ -97,14 +97,14 @@ def main():
             send_admin(bot_token, admin_channel_id, error_msg)
         return
 
-    print(f"New items after dedup: {len(new_items)}")
+    # Optional overflow warning - never happens since select_new_items caps it.
+    #if len(recent_items) > MAX_ITEMS_PER_RUN:
+    #    overflow_msg = f"Overflow: {len(recent_items)} new items, posting {MAX_ITEMS_PER_RUN} now."
+    #    print(f"⚠️  {overflow_msg}")
+    #    if has_telegram:
+    #        send_admin(bot_token, admin_channel_id, overflow_msg)
 
-    # Optional overflow warning
-    if len(new_items) >= MAX_ITEMS_PER_RUN:
-        overflow_msg = f"Overflow: {len(all_items)} new items, posting {MAX_ITEMS_PER_RUN} now."
-        print(f"⚠️  {overflow_msg}")
-        if has_telegram:
-            send_admin(bot_token, admin_channel_id, overflow_msg)
+    print(f"New items after dedup: {len(new_items)}")
 
     # Step 3: Send items to Telegram (if configured)
     if has_telegram:
