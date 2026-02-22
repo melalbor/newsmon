@@ -32,8 +32,15 @@ jobs:
       - name: Run RSS Telegram Bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          # Optional fallback channel ID; most topics now specify their own
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
           TELEGRAM_ADMIN_CHANNEL_ID: ${{ secrets.TELEGRAM_ADMIN_CHANNEL_ID }}
+          # If your feeds.yaml refers to per-topic variables, expose
+          # them here via secrets. For example:
+          TG_CHANNEL_MOBSEC: ${{ secrets.TG_CHANNEL_MOBSEC }}
+          TG_CHANNEL_CTI:    ${{ secrets.TG_CHANNEL_CTI }}
+          # Add one line per env-var name used in feeds.yaml.  This keeps
+          # the actual chat IDs out of repo code.
           STATE_GIST_ID: ${{ secrets.STATE_GIST_ID }}
           GH_GIST_UPDATE_TOKEN: ${{ secrets.GH_GIST_UPDATE_TOKEN }}
         run: |

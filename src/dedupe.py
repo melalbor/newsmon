@@ -70,6 +70,14 @@ def select_new_items(
 def get_past_items(gist_id: str, gh_token: str) -> tuple[str, Dict[str, List[str]]]:
     """
     Returns past item titles from state gist.
+
+    The saved JSON is expected to be a mapping where each key is a
+    ``feed_url`` and the value is a list of titles previously sent for
+    that feed.  This structure remains unchanged even though the
+    configuration now supports topics and per-channel routing; state is
+    purely keyed by feed URL so migrating existing gists is seamless.
+
+    Returns a tuple of the filename within the gist and the parsed data.
     """
     headers = {
         "Authorization": f"token {gh_token}",

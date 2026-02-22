@@ -1,19 +1,31 @@
-- https://blog.google/threat-analysis-group/rss
-- https://blog.lumen.com/author/black-lotus-labs/feed/
-- https://blog.talosintelligence.com/rss/
-- https://blog.sekoia.io/feed/
-- https://citizenlab.ca/feed/
-- https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/
-- https://developer.apple.com/news/releases/rss/releases.rss
-- https://grapheneos.org/releases.atom
-- https://projectzero.google/feed.xml
-- https://securelist.com/threat-category/apt-targeted-attacks/feed/
-- https://securelist.com/threat-category/mobile-threats/feed/
-- https://securitylab.amnesty.org/feed/
-- https://sed-cms.broadcom.com/rss/v1/blogs/rss.xml/221
-- https://unit42.paloaltonetworks.com/feed/
-- https://www.elastic.co/security-labs/rss/categories/malware-analysis.xml
-- https://www.elastic.co/security-labs/rss/categories/reports.xml
-- https://www.elastic.co/security-labs/rss/topics/threat-intelligence.xml
-- https://www.microsoft.com/en-us/security/blog/topic/threat-intelligence/feed/
-- https://www.welivesecurity.com/en/rss/feed/
+topics:
+  mobsec:
+    channel_id: TG_CHANNEL_MOBSEC
+    feeds:
+      - url: https://citizenlab.ca/focus-area/targeted-surveillance/feed/
+        #rules:
+        #  allow: ["mobile", "ios", "android"]
+        #  deny: ["windows", "linux", "macos"]
+      - url: https://developer.apple.com/news/releases/rss/releases.rss
+        rules:
+          allow: ["iOS"]
+      - url: https://grapheneos.org/releases.atom
+      - url: https://securelist.com/threat-category/mobile-threats/feed/
+      - url: https://securitylab.amnesty.org/feed/
+  cti:
+    channel_id: TG_CHANNEL_CTI
+    feeds:
+      - url: https://blog.google/threat-analysis-group/rss
+      - url: https://blog.lumen.com/author/black-lotus-labs/feed/
+      - url: https://blog.sekoia.io/feed/
+      - url: https://blog.talosintelligence.com/rss/
+      - url: https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/
+      - url: https://projectzero.google/feed.xml
+      - url: https://securelist.com/threat-category/apt-targeted-attacks/feed/
+      - url: https://sed-cms.broadcom.com/rss/v1/blogs/rss.xml/221
+      - url: https://unit42.paloaltonetworks.com/feed/
+      - url: https://www.elastic.co/security-labs/rss/categories/malware-analysis.xml
+      - url: https://www.elastic.co/security-labs/rss/categories/reports.xml
+      - url: https://www.elastic.co/security-labs/rss/topics/threat-intelligence.xml
+      - url: https://www.microsoft.com/en-us/security/blog/topic/threat-intelligence/feed/
+      - url: https://www.welivesecurity.com/en/rss/feed/

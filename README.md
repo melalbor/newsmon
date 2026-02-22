@@ -2,17 +2,18 @@
 
 [![RSS Telegram Bot](https://github.com/melalbor/newsmon/actions/workflows/rss-bot.yml/badge.svg)](https://github.com/melalbor/newsmon/actions/workflows/rss-bot.yml)
 
-An automated RSS feed aggregator that fetches news from multiple sources and sends them to a Telegram channel. Designed for scheduled execution (e.g., daily cron jobs) with built-in deduplication, rate limiting, and error recovery.
+An automated RSS feed aggregator that fetches news from multiple sources and sends them to one or more Telegram channels. Designed for scheduled execution (e.g., daily cron jobs) with built-in deduplication, rate limiting, and error recovery.
 
 ## Features
 
-- **Multi-Feed Support**: Monitor 35+ RSS/Atom feeds from diverse sources
-- **Intelligent Deduplication**: Fingerprint-based duplicate detection across feeds
+- **Multi-Feed Support**: Monitor multiple RSS/Atom feeds from diverse sources
+- **Per-Topic Channel Routing**: Each topic references an environment variable name rather than embedding a Telegram chat ID
+- **Intelligent Deduplication**: State file-based duplicate detection across feeds (GitHub Gist)
 - **Automated Scheduling**: GitHub Actions integration for daily execution
 - **Rate Limiting**: Exponential backoff with automatic retry on API rate limits
 - **Error Handling**: Graceful error handling with proper failure reporting
 - **No State Persistence**: Ephemeral in-memory operation - perfect for serverless
-- **Comprehensive Testing**: 132 tests with 5.28x test/code ratio
+- **Comprehensive Testing**: 117 tests (unit + integration) ensure reliability
 - **Security First**: Environment variables for all sensitive data, no hardcoded secrets
 
 ## Project Structure
@@ -26,15 +27,15 @@ newsmon/
 │   ├── dedupe.py            # Deduplication and filtering
 │   └── telegram_msg.py      # Telegram API integration
 ├── tests/
-│   ├── unit/                # Unit tests (119 tests)
-│   ├── integration/         # Integration tests (13 tests)
+│   ├── unit/                # Unit tests (≈105 tests)
+│   ├── integration/         # Integration tests (≈12 tests)
 │   └── __init__.py
 ├── feeds.yaml               # RSS feed configuration
 ├── requirements.txt         # Python dependencies
 ├── pytest.ini               # Pytest configuration
 ├── .github/workflows/
-│   └── rss-bot.yml         # GitHub Actions workflow
-└── README.md               # This file
+│   └── rss-bot.yml          # GitHub Actions workflow
+└── README.md                # This file
 ```
 
 ## Prerequisites
@@ -69,20 +70,28 @@ pip install -r requirements.txt
 
 ### 4. Set Up Environment Variables
 
+The bot uses environment variables for secrets and channel identifiers.  In
+recent versions the per-topic `feeds.yaml` configuration holds the *names* of
+environment variables that contain the actual Telegram chat IDs (see
+**Configuration** below).  This keeps sensitive identifiers out of source
+control; `TELEGRAM_CHANNEL_ID` now serves only as a legacy/fallback value for
+local testing.
+
 Create a `.env` file (not committed to git):
 
 ```bash
 export TELEGRAM_BOT_TOKEN="your_bot_token_here"
-export TELEGRAM_CHANNEL_ID="your_channel_id_here"
 export TELEGRAM_ADMIN_CHANNEL_ID="your_admin_channel_id_here"
+# optional fallback channel id
+export TELEGRAM_CHANNEL_ID="your_channel_id_here"
 ```
 
 Or set them directly in your shell:
 
 ```bash
 export TELEGRAM_BOT_TOKEN="..."
-export TELEGRAM_CHANNEL_ID="..."
 export TELEGRAM_ADMIN_CHANNEL_ID="..."
+export TELEGRAM_CHANNEL_ID="..."
 ```
 
 ### 5. Verify Installation
@@ -91,21 +100,57 @@ export TELEGRAM_ADMIN_CHANNEL_ID="..."
 python -m pytest tests/ -v
 ```
 
-Expected output: `111 passed in ~3.72s`
+Expected output: `X passed in ~Xs`
 
 ## Configuration
+#### State file (Gist)
 
+The bot tracks items it has already posted by storing titles in a
+GitHub Gist whose ID is supplied via `STATE_GIST_ID`.  The JSON payload is a
+simple mapping from **feed URL** → list of titles.  This format has **not
+changed** with the introduction of topics or per-channel routing, so your
+existing state gist continues to work without migration.  State is intentionally
+independent of topics or channels, which makes it safe to reassign a feed to
+different topics without losing history.
 ### feeds.yaml
 
-The `feeds.yaml` file contains the list of RSS/Atom feeds to monitor:
+The format of `feeds.yaml` was recently extended to support multiple
+"topics" each with its own Telegram channel and optional allow/deny
+filters.  Each topic specifies a **channel_id** which should be the name of
+an environment variable containing the real chat id (e.g. ``TG_CHANNEL_MOBSEC``).
+Example structure:
 
 ```yaml
-feeds:
-  - https://example.com/feed/rss
-  - https://example.com/atom.xml
-  - https://another-source.com/news/feed
-  # Add more feed URLs here
+topics:
+  mobsec:
+    channel_id: TG_CHANNEL_MOBSEC
+    feeds:
+      - url: https://citizenlab.ca/focus-area/targeted-surveillance/feed/
+        rules:
+          allow: ["mobile", "ios", "android"]
+          deny: ["windows", "linux", "macos"]
+      - url: https://developer.apple.com/news/releases/rss/releases.rss
+        rules:
+          allow: ["iOS"]
+  cti:
+    channel_id: TG_CHANNEL_CTI
+    feeds:
+      - https://blog.google/threat-analysis-group/rss
+      - https://blog.talosintelligence.com/rss/
+      # more URLs here
 ```
+
+Each feed entry may either be a plain string (just a URL) or a mapping with
+``url`` and an optional ``rules`` sub‑mapping containing ``allow``/``deny``
+lists.  When a rule is present, item titles and summaries are scanned for the
+keywords and only matching items are sent (``deny`` entries are always
+excluded).
+
+Older flat list files will still work but are discouraged; migrate to the new
+format when you add channels or filters.  Remember that `channel_id` within a
+topic must be the *name* of an environment variable rather than the literal
+chat id.  Existing state gists are unaffected, since deduplication is keyed
+by feed URL alone.
 
 **Current feeds include sources from:**
 - Security organizations (Apple, GrapheneOS, Kaspersky, Citizen Lab, Amnesty International)
@@ -118,8 +163,8 @@ feeds:
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `TELEGRAM_BOT_TOKEN` | Yes | Bot token from @BotFather |
-| `TELEGRAM_CHANNEL_ID` | Yes | Channel ID to post updates |
-| `TELEGRAM_ADMIN_CHANNEL_ID` | Yes | Admin channel for notifications |
+| `TELEGRAM_ADMIN_CHANNEL_ID` | Yes | Chat id for admin notifications |
+| `TELEGRAM_CHANNEL_ID` | No | *Fallback* chat id for development; per-topic config in `feeds.yaml` refers to env var names |
 | `STATE_GIST_ID`  | Yes | GitHub Gist ID where state file is stored, containing published news titles |
 | `GH_GIST_UPDATE_TOKEN` | Yes | GitHub token to update State Gist file |  
 
@@ -279,11 +324,10 @@ crontab -e
 - **Unit Tests**: Individual module functionality
   - Feed fetching
   - Feed parsing
-  - Deduplication
-  - Telegram messaging
-  - Main orchestration
-  - Rate limiting
-  - Configuration validation
+  - Deduplication (including edge cases such as multi-feed caps)
+  - Telegram messaging and rate limiting
+  - Main orchestration and environment handling
+  - Configuration validation (including feeds.yaml rules)
 
 - **Integration Tests**: End-to-end workflows
   - Complete workflow from feed to Telegram

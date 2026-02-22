@@ -31,14 +31,38 @@ def validate_feeds_yaml_on_startup():
     except yaml.YAMLError as e:
         pytest.fail(f"feeds.yaml contains invalid YAML: {e}")
     
-    # Check type is list
-    assert isinstance(data, list), f"feeds.yaml root element must be a list, got {type(data).__name__}"
-    
-    # Check not empty
-    assert len(data) > 0, "feeds.yaml list cannot be empty"
-    
-    # Validate each item is a string URL
-    for i, item in enumerate(data, 1):
-        assert isinstance(item, str), f"Feed #{i} must be a string, got {type(item).__name__}"
-        assert item.startswith(('http://', 'https://')), f"Feed #{i} must start with http:// or https://"
-        assert len(item.strip()) > len('http://'), f"Feed #{i} URL appears empty or too short"
+    # New format: root must be a dict containing 'topics'
+    assert isinstance(data, dict), f"feeds.yaml root element must be a mapping, got {type(data).__name__}"
+    assert 'topics' in data, "feeds.yaml must contain a 'topics' key"
+    assert isinstance(data['topics'], dict), "'topics' value must be a mapping"
+    assert data['topics'], "'topics' mapping cannot be empty"
+
+    # validate each topic configuration
+    for topic_name, topic_cfg in data['topics'].items():
+        assert isinstance(topic_cfg, dict), f"Topic '{topic_name}' must be a mapping"
+        assert 'channel_id' in topic_cfg and isinstance(topic_cfg['channel_id'], str), \
+            f"Topic '{topic_name}' must declare a string channel_id"
+        assert 'feeds' in topic_cfg and isinstance(topic_cfg['feeds'], list), \
+            f"Topic '{topic_name}' must declare a list of feeds"
+        assert topic_cfg['feeds'], f"Topic '{topic_name}' feeds list cannot be empty"
+
+        for i, feed in enumerate(topic_cfg['feeds'], 1):
+            if isinstance(feed, str):
+                feed_url = feed
+            elif isinstance(feed, dict):
+                assert 'url' in feed and isinstance(feed['url'], str), \
+                    f"Feed #{i} in topic '{topic_name}' must have a 'url' string"
+                feed_url = feed['url']
+                if 'rules' in feed:
+                    assert isinstance(feed['rules'], dict), \
+                        f"Rules for feed '{feed_url}' must be a mapping"
+                    for key in feed['rules']:
+                        assert key in ('allow', 'deny'), \
+                            f"Unknown rule '{key}' in feed '{feed_url}'"
+                        assert isinstance(feed['rules'][key], list), \
+                            f"Rule '{key}' in feed '{feed_url}' must be a list"
+            else:
+                pytest.fail(f"Feed entry in topic '{topic_name}' must be string or mapping")
+            assert feed_url.startswith(('http://', 'https://')), \
+                f"Feed URL must start with http:// or https://: {feed_url}"
+            assert len(feed_url.strip()) > len('http://'), f"Feed URL appears empty: {feed_url}"

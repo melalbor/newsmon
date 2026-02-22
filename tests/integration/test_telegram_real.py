@@ -15,6 +15,8 @@ def telegram_credentials():
     return {
         "bot_token": os.environ.get("TELEGRAM_BOT_TOKEN"),
         "admin_channel_id": os.environ.get("TELEGRAM_ADMIN_CHANNEL_ID"),
+        # TELEGRAM_CHANNEL_ID is a convenient fallback for quick tests; in
+        # production you would normally specify channel IDs in feeds.yaml instead.
         "test_channel_id": os.environ.get("TELEGRAM_CHANNEL_ID"),
     }
 
@@ -40,7 +42,7 @@ class TestTelegramRealIntegration:
     @pytest.mark.skipif(not os.environ.get("TELEGRAM_BOT_TOKEN"),
                         reason="TELEGRAM_BOT_TOKEN not set")
     @pytest.mark.skipif(not os.environ.get("TELEGRAM_CHANNEL_ID"),
-                        reason="TELEGRAM_CHANNEL_ID not set")
+                        reason="TELEGRAM_CHANNEL_ID not set (fallback for real tests)")
     def test_send_message_to_channel(self, telegram_credentials):
         """Test sending message to test channel"""
         bot_token = telegram_credentials["bot_token"]
@@ -54,7 +56,7 @@ class TestTelegramRealIntegration:
     @pytest.mark.skipif(not os.environ.get("TELEGRAM_BOT_TOKEN"),
                         reason="TELEGRAM_BOT_TOKEN not set")
     @pytest.mark.skipif(not os.environ.get("TELEGRAM_CHANNEL_ID"),
-                        reason="TELEGRAM_CHANNEL_ID not set")
+                        reason="TELEGRAM_CHANNEL_ID not set (fallback for real tests)")
     def test_send_multiple_items(self, telegram_credentials):
         """Test sending multiple items to channel"""
         bot_token = telegram_credentials["bot_token"]

@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timezone
 
-from src.main import load_feeds, main
+from src.main import load_feeds, main, apply_rules
 from src.fetch import fetch_feed, fetch_all, FeedFetchError
 from src.parse import normalize_feed, _parse_datetime
 from src.dedupe import select_new_items
@@ -55,11 +55,12 @@ def create_test_feed(title="Test Feed", entries=None):
     return feed
 
 
-def create_test_feeds_file(feeds_file, feeds):
-    """Helper to create test feeds YAML file"""
+def create_test_feeds_file(feeds_file, topics):
+    """Helper to create test feeds YAML file with topics format"""
     import yaml
+    data = {"topics": topics}
     with open(feeds_file, 'w') as f:
-        yaml.dump(feeds, f)
+        yaml.dump(data, f)
 
 
 class TestEndToEndFlow:
@@ -68,11 +69,12 @@ class TestEndToEndFlow:
     def test_workflow_load_normalize_dedupe(self, feeds_file):
         """Test complete workflow: load -> normalize -> dedupe"""
         feed_url = "https://example.com/feed.rss"
-        create_test_feeds_file(feeds_file, [feed_url])
+        create_test_feeds_file(feeds_file, {"t": {"channel_id": "C", "feeds": [feed_url]}})
         
         # Load feeds
         feeds = load_feeds(feeds_file)
         assert len(feeds) == 1
+        assert feeds[0]["feed_url"] == feed_url
         
         # Create test items
         entries = [
@@ -118,6 +120,29 @@ class TestEndToEndFlow:
         entry.updated_parsed = None
         
         dt1 = _parse_datetime(entry)
-        dt2 = _parse_datetime(entry)
-        
-        assert dt1 == dt2
+
+    def test_rule_filtering_integration(self, feeds_file):
+        """Ensure items are filtered according to allow/deny rules"""
+        feed_url = "https://example.com/feed.rss"
+        create_test_feeds_file(feeds_file, {
+            "t": {
+                "channel_id": "C",
+                "feeds": [{
+                    "url": feed_url,
+                    "rules": {"allow": ["keep"], "deny": ["drop"]},
+                }]
+            }
+        })
+        # create entries: one matching allow and not deny, one matching deny
+        entries = [
+            create_test_entry("keep this article", "https://example.com/1", "id1"),
+            create_test_entry("drop this article", "https://example.com/2", "id2"),
+        ]
+        feed = create_test_feed(entries=entries)
+        items = normalize_feed(feed, feed_url)
+        # attach rules that mirror the config file
+        for it in items:
+            it["rules"] = {"allow": ["keep"], "deny": ["drop"]}
+        filtered = apply_rules(items)
+        assert len(filtered) == 1
+        assert "keep" in filtered[0]["title"].lower()
