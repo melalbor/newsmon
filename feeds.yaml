@@ -15,7 +15,7 @@ topics:
   cti:
     channel_id: TG_CHANNEL_CTI
     feeds:
-      - url: https://blog.google/threat-analysis-group/rss
+      - url: https://blog.google/security/rss/
       #- url: https://blog.lumen.com/author/black-lotus-labs/feed/
       - url: https://blog.sekoia.io/feed/
       - url: https://blog.talosintelligence.com/rss/
