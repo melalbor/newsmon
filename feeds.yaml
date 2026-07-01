@@ -17,7 +17,7 @@ topics:
     feeds:
       - url: https://blog.google/security/rss/
       #- url: https://blog.lumen.com/author/black-lotus-labs/feed/
-      - url: https://blog.sekoia.io/feed/
+      - url: https://www.sekoia.com/blog/rss.xml
       - url: https://blog.talosintelligence.com/rss/
       - url: https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/
       - url: https://projectzero.google/feed.xml
