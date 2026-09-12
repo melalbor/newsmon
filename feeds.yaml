@@ -23,9 +23,9 @@ topics:
       - url: https://securelist.com/threat-category/apt-targeted-attacks/feed/
       - url: https://sed-cms.broadcom.com/rss/v1/blogs/rss.xml/221
       - url: https://unit42.paloaltonetworks.com/feed/
-      - url: https://www.elastic.co/security-labs/rss/categories/malware-analysis.xml
-      - url: https://www.elastic.co/security-labs/rss/categories/reports.xml
-      - url: https://www.elastic.co/security-labs/rss/topics/threat-intelligence.xml
+      #- url: https://www.elastic.co/security-labs/rss/categories/malware-analysis.xml
+      #- url: https://www.elastic.co/security-labs/rss/categories/reports.xml
+      #- url: https://www.elastic.co/security-labs/rss/topics/threat-intelligence.xml
       - url: https://www.microsoft.com/en-us/security/blog/topic/threat-intelligence/feed/
       - url: https://www.welivesecurity.com/en/rss/feed/
       - url: https://www.sekoia.com/blog/rss.xml
